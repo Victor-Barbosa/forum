@@ -1,47 +1,57 @@
 package br.com.alura.service
 
+import br.com.alura.dto.AtualizacaoTopicoForm
 import br.com.alura.dto.NovoTopicoForm
 import br.com.alura.dto.TopicoView
-import br.com.alura.model.Topico
+import br.com.alura.exception.NotFoundException
+import br.com.alura.mapper.TopicoFormMapper
+import br.com.alura.mapper.TopicoViewMapper
+import br.com.alura.repository.TopicoRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.util.stream.Collectors
 
 @Service
 class TopicoService(
-    private var topicos: List<Topico> = ArrayList(),
-    private val cursoService: CursoService,
-    private val usuarioService: UsuarioService
+    private val repository: TopicoRepository,
+    private val topicoViewMapper: TopicoViewMapper,
+    private val topicoFormMapper: TopicoFormMapper,
+    private val notFoundMessage: String = "Topico nao encontrado!"
 ) {
 
-    fun listar(): List<TopicoView> {
-        return topicos.stream().map { topico -> TopicoView(
-            id = topico.id,
-            titulo = topico.titulo,
-            mensagem = topico.mensagem,
-            status = topico.status,
-            dataCriacao = topico.dataCriacao
-        ) }.collect(Collectors.toList())
+    fun listar(
+        nomeCurso: String?,
+        paginacao: Pageable
+    ): Page<TopicoView> {
+        val topicos = if (nomeCurso == null) {
+            repository.findAll(paginacao)
+        } else {
+            repository.findByCursoNome(nomeCurso, paginacao)
+        }
+        return topicos.map { topico -> topicoViewMapper.map(topico) }
+
     }
 
     fun buscarPorId(id: Long): TopicoView {
-        val topico = topicos.stream().filter { t-> t.id == id}
-                                .findFirst().get()
-        return TopicoView(
-            id = topico.id,
-            titulo = topico.titulo,
-            mensagem = topico.mensagem,
-            status = topico.status,
-            dataCriacao = topico.dataCriacao
-        )
+        val topico = repository.findById(id).orElseThrow{NotFoundException(notFoundMessage)}
+        return topicoViewMapper.map(topico)
     }
 
-    fun cadastrar(dto: NovoTopicoForm) {
-        topicos = topicos.plus(Topico(
-            id = topicos.size.toLong() +1,
-            titulo = dto.titulo,
-            mensagem = dto.mensagem,
-            curso = cursoService.buscarPorID(dto.idCurso),
-            autor = usuarioService.buscarPorID(dto.idAutor)
-        ))
+    fun cadastrar(form: NovoTopicoForm): TopicoView {
+        val topico =  topicoFormMapper.map(form)
+        repository.save(topico)
+        return topicoViewMapper.map(topico)
+    }
+
+    fun atualizar(form: AtualizacaoTopicoForm): TopicoView {
+        val topico = repository.findById(form.id).orElseThrow{NotFoundException(notFoundMessage)}
+        topico.titulo = form.titulo
+        topico.mensagem = form.mensagem
+        return topicoViewMapper.map(topico)
+    }
+
+    fun deletar(id: Long) {
+        repository.deleteById(id)
     }
 }
