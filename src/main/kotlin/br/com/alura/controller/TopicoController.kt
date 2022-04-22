@@ -2,6 +2,7 @@ package br.com.alura.controller
 
 import br.com.alura.dto.AtualizacaoTopicoForm
 import br.com.alura.dto.NovoTopicoForm
+import br.com.alura.dto.TopicoPorCategoriaDto
 import br.com.alura.dto.TopicoView
 import br.com.alura.service.TopicoService
 import org.springframework.cache.annotation.CacheEvict
@@ -41,7 +42,7 @@ class TopicoController(private val service: TopicoService) {
 
     @PostMapping
     @Transactional
-    @CacheEvict("topicos")
+    @CacheEvict(value = ["topicos"], allEntries = true)
     fun cadastrar(
         @RequestBody @Valid form: NovoTopicoForm,
         uriBuilder: UriComponentsBuilder
@@ -53,7 +54,7 @@ class TopicoController(private val service: TopicoService) {
 
     @PutMapping
     @Transactional
-    @CacheEvict("topicos")
+    @CacheEvict(value = ["topicos"], allEntries = true)
     fun atualizar(@RequestBody @Valid form: AtualizacaoTopicoForm): ResponseEntity<TopicoView> {
         val topicoView = service.atualizar(form)
         return ResponseEntity.ok(topicoView)
@@ -62,9 +63,13 @@ class TopicoController(private val service: TopicoService) {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
-    @CacheEvict("topicos")
+    @CacheEvict(value = ["topicos"], allEntries = true)
     fun deletar(@PathVariable id: Long) {
         service.deletar(id)
+    }
 
+    @GetMapping("/relatorio")
+    fun relatorio(): List<TopicoPorCategoriaDto>{
+        return service.relatorio()
     }
 }
