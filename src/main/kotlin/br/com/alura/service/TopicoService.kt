@@ -2,6 +2,7 @@ package br.com.alura.service
 
 import br.com.alura.dto.AtualizacaoTopicoForm
 import br.com.alura.dto.NovoTopicoForm
+import br.com.alura.dto.TopicoPorCategoriaDto
 import br.com.alura.dto.TopicoView
 import br.com.alura.exception.NotFoundException
 import br.com.alura.mapper.TopicoFormMapper
@@ -10,7 +11,6 @@ import br.com.alura.repository.TopicoRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import java.util.stream.Collectors
 
 @Service
 class TopicoService(
@@ -53,5 +53,9 @@ class TopicoService(
 
     fun deletar(id: Long) {
         repository.deleteById(id)
+    }
+
+    fun relatorio(): List<TopicoPorCategoriaDto>{
+        return repository.relatorio()
     }
 }
